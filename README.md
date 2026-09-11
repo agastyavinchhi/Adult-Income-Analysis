@@ -20,7 +20,9 @@ Then I did some quick exploration, filtering people working over 40 hours and gr
 
 That helped me understand that the feature had some signal, so I one-hot encoded the categorical columns and trained a `GradientBoostingClassifier`. It gets 86.5% accuracy on the test set, with marital status, education, and capital gain as the most important features.
 
-At the end, I reran the same cleaning and groupby in Polars to compare against Pandas to do some performance analysis. Polars was about 5x faster according to my analysis.
+## Other Deliverables
+
+At the end of `main.ipynb`, I reran the same cleaning and groupby in Polars to compare against Pandas to do some performance analysis. Polars was about 5x faster according to my analysis.
 
 Finally, `rust_vs_python_intro.ipynb` is the Rust notebook we went over in class. I edited the cells to experiment with Rust and made changes to the notebook accordingly.
 
