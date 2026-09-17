@@ -2,23 +2,53 @@
 
 Predicting whether someone earns more than $50K a year using the [Adult Census Income](https://archive.ics.uci.edu/dataset/2/adult) dataset.
 
+The point of this project was to take a messy real-world dataset from start to finish: clean it up, use some plots to figure out which features actually carry signal, train a model on them, and then check whether the features the model leans on line up with what the plots suggested.
+
+## Files
+
+```
+adult.csv                   # the dataset
+main.ipynb                  # cleaning, exploration, plots, the model, Polars benchmark
+rust_vs_python_intro.ipynb  # the Rust notebook from class
+images/                     # exported plots
+```
+
 ## Dataset
 
-About 32.5K rows of 1994 US census data. Each row is a person with 14 features (age, education, occupation, hours per week, etc.) and a target column, `income`, which is either `<=50K` or `>50K`.
+About 32.5K rows of 1994 US census data. Each row is a person with 14 features and a target column, `income`, which is either `<=50K` or `>50K`.
+
+Six of the features are numeric — `age`, `fnlwgt`, `education.num`, `capital.gain`, `capital.loss`, and `hours.per.week` — and the other eight are text categories: `workclass`, `education`, `marital.status`, `occupation`, `relationship`, `race`, `sex`, and `native.country`.
 
 ## What I did (`main.ipynb`)
 
-Started by loading the CSV and running `head()`, `describe()`, and `info()` to understand the columns and types. Missing values are stored as `"?"`, so I replaced those, dropped them along with 24 duplicate rows, and ended up with 30,139 clean rows.
+Started by loading the CSV and running `head()`, `describe()`, and `info()` to understand the columns and types. Missing values are stored as `"?"` rather than as actual nulls, so Pandas doesn't flag them — I replaced them first, which showed the gaps were concentrated in `workclass` (1,836), `occupation` (1,843), and `native.country` (583). Dropping those rows along with 24 duplicates left 30,139 clean rows.
 
-Then I did some quick exploration, filtering people working over 40 hours and grouping by education, did grouping by education, and made three plots to see which features actually separate the two income groups:
+Then I did some quick exploration, filtering people working over 40 hours a week and grouping by education, and made three plots to see which features actually separate the two income groups:
 
-- Share earning >50K by education: Prof-school and Doctorate around 75%, HS-grad around 16%
-- Age distribution by income: almost nobody under 25 earns >50K
+- Share earning >50K by education: Prof-school and Doctorate around 75%, Bachelors 42%, HS-grad around 16%
+- Age distribution by income: almost nobody under 25 earns >50K, and high earners cluster between about 35 and 55
 - Hours per week by income: high earners work more hours
 
-![Income by education](images/income_by_education.png)
+[![Income by education](images/income_by_education.png)](images/income_by_education.png)
 
-That helped me understand that the feature had some signal, so I one-hot encoded the categorical columns and trained a `GradientBoostingClassifier`. It gets 86.5% accuracy on the test set, with marital status, education, and capital gain as the most important features.
+## The model
+
+The plots made it clear the features had signal, so I used all 14 of them. The numeric columns go in as they are, and the categorical ones get one-hot encoded with `pd.get_dummies()` so each category becomes its own binary column. I converted `income` into a binary `high_income` target, split the data 80/20, and trained a `GradientBoostingClassifier` on defaults with `random_state=42`.
+
+It gets **86.5% accuracy** on the test set. Worth noting that about 75% of the dataset earns `<=50K`, so always guessing "low income" would already score 75% — the model is a real improvement on that, but not as big a jump as 86.5% sounds on its own.
+
+Here's what it ended up relying on:
+
+| Feature | Importance |
+|---|---|
+| `marital.status_Married-civ-spouse` | 0.39 |
+| `education.num` | 0.20 |
+| `capital.gain` | 0.19 |
+| `capital.loss` | 0.06 |
+| `age` | 0.06 |
+| `hours.per.week` | 0.04 |
+
+Those six account for almost all of it. Occupation shows up further down, but split across individual job categories, so no single one contributes much — `Exec-managerial` is the largest at 0.016. Education, age, and hours all matching what I saw in the plots was a good sanity check.
 
 ## Other Deliverables
 
@@ -28,10 +58,11 @@ Finally, `rust_vs_python_intro.ipynb` is the Rust notebook we went over in class
 
 ## Running it
 
-```bash
+```
 make install   # install dependencies from requirements.txt
 make run       # open the notebook in Jupyter
 make execute   # run the whole notebook headless and save outputs
+make clean     # remove checkpoints and caches
 ```
 
 Use a different interpreter with `make install PYTHON=/path/to/python`.
