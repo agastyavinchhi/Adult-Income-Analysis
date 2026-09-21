@@ -5,6 +5,7 @@ Predicting whether someone earns more than $50K a year using the [Adult Census I
 The point of this project was to take a messy real-world dataset from start to finish: clean it up, use some plots to figure out which features actually carry signal, train a model on them, and then check whether the features the model leans on line up with what the plots suggested.
 
 Why is refactoring good?
+
 Refactor today, otherwise you will end up having to refactor tomorrow!
 
 ## Files
