@@ -11,10 +11,14 @@ Refactor today, otherwise you will end up having to refactor tomorrow!
 ## Files
 
 ```
-adult.csv                   # the dataset
+main.py                     # the pipeline: load -> preprocess -> train -> evaluate
 main.ipynb                  # cleaning, exploration, plots, the model, Polars benchmark
+tests/                      # pytest unit and system tests
+adult.csv                   # the dataset
 rust_vs_python_intro.ipynb  # the Rust notebook from class
 images/                     # exported plots
+pyproject.toml              # dependencies and pytest config
+uv.lock                     # pinned versions for reproducible installs
 ```
 
 ## Dataset
@@ -23,7 +27,9 @@ About 32.5K rows of 1994 US census data. Each row is a person with 14 features a
 
 Six of the features are numeric — `age`, `fnlwgt`, `education.num`, `capital.gain`, `capital.loss`, and `hours.per.week` — and the other eight are text categories: `workclass`, `education`, `marital.status`, `occupation`, `relationship`, `race`, `sex`, and `native.country`.
 
-## What I did (`main.ipynb`)
+## What I did
+
+The exploration lives in `main.ipynb`; the final pipeline (load, clean, train, evaluate) is in `main.py`.
 
 Started by loading the CSV and running `head()`, `describe()`, and `info()` to understand the columns and types. Missing values are stored as `"?"` rather than as actual nulls, so Pandas doesn't flag them — I replaced them first, which showed the gaps were concentrated in `workclass` (1,836), `occupation` (1,843), and `native.country` (583). Dropping those rows along with 24 duplicates left 30,139 clean rows.
 
@@ -62,11 +68,13 @@ Finally, `rust_vs_python_intro.ipynb` is the Rust notebook we went over in class
 
 ## Running it
 
-```
-make install   # install dependencies from requirements.txt
-make run       # open the notebook in Jupyter
-make execute   # run the whole notebook headless and save outputs
-make clean     # remove checkpoints and caches
-```
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). `pyproject.toml` lists what the project needs and `uv.lock` pins the exact versions, so every install is identical.
 
-Use a different interpreter with `make install PYTHON=/path/to/python`.
+```bash
+make install    # create .venv and install everything from uv.lock
+make run        # run the pipeline (python main.py) and print test accuracy
+make test       # run the unit tests with pytest
+make notebook   # open main.ipynb in Jupyter
+make execute    # run the whole notebook headless and save outputs
+make clean      # remove checkpoints and caches
+```

@@ -1,16 +1,21 @@
-PYTHON ?= python3
 NOTEBOOK = main.ipynb
 
-.PHONY: install run execute clean
+.PHONY: install run test notebook execute clean
 
 install:
-	$(PYTHON) -m pip install -r requirements.txt
+	uv sync
 
 run:
-	$(PYTHON) -m jupyter notebook $(NOTEBOOK)
+	uv run python main.py
+
+test:
+	uv run pytest
+
+notebook:
+	uv run jupyter notebook $(NOTEBOOK)
 
 execute:
-	$(PYTHON) -m jupyter nbconvert --to notebook --execute --inplace $(NOTEBOOK)
+	uv run jupyter nbconvert --to notebook --execute --inplace $(NOTEBOOK)
 
 clean:
-	rm -rf .ipynb_checkpoints __pycache__
+	rm -rf .ipynb_checkpoints __pycache__ .pytest_cache
