@@ -1,6 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
-
 from main import load_data, data_preprocess, train_model, plot_income_by_education, DATA_PATH
 
 # Unit Test 1
