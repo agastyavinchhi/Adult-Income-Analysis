@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
 
-SHOW_PLOT = False
+SHOW_PLOT = True
 DATA_PATH = "adult.csv"
 
 def load_data(path = DATA_PATH):
