@@ -40,9 +40,7 @@ Education turned out to be one of the clearest signals separating the two income
 
 ## The model
 
-The plots made it clear the features had signal, so I used all 14 of them. The numeric columns go in as they are, and the categorical ones get one-hot encoded with `pd.get_dummies()` so each category becomes its own binary column. I converted `income` into a binary `high_income` target, split the data 80/20, and trained a `GradientBoostingClassifier` on defaults with `random_state=42`.
-
-It gets **86.5% accuracy** on the test set. Worth noting that about 75% of the dataset earns `<=50K`, so always guessing "low income" would already score 75% — the model is a real improvement on that, but not as big a jump as 86.5% sounds on its own.
+The plots made it clear the features had signal, so I used all 14 of them. The numeric columns go in as they are, and the categorical ones get one-hot encoded with `pd.get_dummies()` so each category becomes its own binary column. I converted `income` into a binary `high_income` target, split the data 80/20, and trained a `GradientBoostingClassifier` on defaults with `random_state=42`. The model achieved **86.5% accuracy** on the test set.
 
 Here's what it ended up relying on:
 
