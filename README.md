@@ -30,7 +30,7 @@ Six of the features are numeric — `age`, `fnlwgt`, `education.num`, `capital.g
 
 ## What I did
 
-Everything — cleaning, exploration, training, and evaluation — lives in `main.py`.
+Everything (cleaning, exploration, training, and evaluation)lives in `main.py`.
 
 Started by loading the CSV and running `head()`, `describe()`, and `info()` to understand the columns and types. Missing values are stored as `"?"` rather than as actual nulls, so Pandas doesn't flag them — I replaced them first, which showed the gaps were concentrated in `workclass` (1,836), `occupation` (1,843), and `native.country` (583). Dropping those rows along with 24 duplicates left 30,139 clean rows.
 
@@ -53,7 +53,7 @@ Here's what it ended up relying on:
 | `age` | 0.06 |
 | `hours.per.week` | 0.04 |
 
-Those six account for almost all of it. Occupation shows up further down, but split across individual job categories, so no single one contributes much — `Exec-managerial` is the largest at 0.016. Education, age, and hours all matching what I saw in the plots was a good sanity check.
+Those six account for almost all of it. Occupation shows up further down, but split across individual job categories, so no single one contributes much — `Exec-managerial` is the largest at 0.016.
 
 ## Testing & CI
 
