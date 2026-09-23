@@ -14,10 +14,9 @@ Refactor today, otherwise you will end up having to refactor tomorrow!
 
 ```
 main.py                     # the pipeline: load -> preprocess -> train -> evaluate
-main.ipynb                  # cleaning, exploration, plots, the model, Polars benchmark
 tests/                      # pytest unit and system tests
+.github/workflows/          # GitHub Actions CI config
 adult.csv                   # the dataset
-rust_vs_python_intro.ipynb  # the Rust notebook from class
 images/                     # exported plots
 pyproject.toml              # dependencies and pytest config
 uv.lock                     # pinned versions for reproducible installs
@@ -31,15 +30,11 @@ Six of the features are numeric — `age`, `fnlwgt`, `education.num`, `capital.g
 
 ## What I did
 
-The exploration lives in `main.ipynb`; the final pipeline (load, clean, train, evaluate) is in `main.py`.
+Everything — cleaning, exploration, training, and evaluation — lives in `main.py`.
 
 Started by loading the CSV and running `head()`, `describe()`, and `info()` to understand the columns and types. Missing values are stored as `"?"` rather than as actual nulls, so Pandas doesn't flag them — I replaced them first, which showed the gaps were concentrated in `workclass` (1,836), `occupation` (1,843), and `native.country` (583). Dropping those rows along with 24 duplicates left 30,139 clean rows.
 
-Then I did some quick exploration, filtering people working over 40 hours a week and grouping by education, and made three plots to see which features actually separate the two income groups:
-
-- Share earning >50K by education: Prof-school and Doctorate around 75%, Bachelors 42%, HS-grad around 16%
-- Age distribution by income: almost nobody under 25 earns >50K, and high earners cluster between about 35 and 55
-- Hours per week by income: high earners work more hours
+Education turned out to be one of the clearest signals separating the two income groups — Prof-school and Doctorate holders earn >50K about 75% of the time, versus 42% for Bachelors and 16% for HS-grad. That's what `plot_income_by_education()` in `main.py` produces:
 
 [![Income by education](images/income_by_education.png)](images/income_by_education.png)
 
@@ -62,21 +57,24 @@ Here's what it ended up relying on:
 
 Those six account for almost all of it. Occupation shows up further down, but split across individual job categories, so no single one contributes much — `Exec-managerial` is the largest at 0.016. Education, age, and hours all matching what I saw in the plots was a good sanity check.
 
-## Other Deliverables
+## Testing & CI
 
-At the end of `main.ipynb`, I reran the same cleaning and groupby in Polars to compare against Pandas to do some performance analysis. Polars was about 5x faster according to my analysis.
+Tests live in `tests/test_main.py` and cover the core pipeline:
 
-Finally, `rust_vs_python_intro.ipynb` is the Rust notebook we went over in class. I edited the cells to experiment with Rust and made changes to the notebook accordingly.
+- **Data loading** — the CSV loads without errors
+- **Preprocessing** — `"?"` values and duplicate rows are correctly dropped
+- **Feature computation** — the income-share-by-education aggregation used in the plot produces correct values
+- **Full pipeline (system test)** — load → preprocess → train runs end-to-end and produces a valid model and accuracy
+
+A GitHub Actions workflow (`.github/workflows/python-app.yml`) runs the full test suite with `uv run pytest` on every push and pull request to `main`.
 
 ## Running it
 
-Dependencies are managed with [uv](https://docs.astral.sh/uv/). `pyproject.toml` lists what the project needs and `uv.lock` pins the exact versions, so every install is identical.
+Dependencies are managed with `uv`. `pyproject.toml` lists what the project needs and `uv.lock` pins the exact versions, so every install is identical.
 
 ```bash
 make install    # create .venv and install everything from uv.lock
 make run        # run the pipeline (python main.py) and print test accuracy
-make test       # run the unit tests with pytest
-make notebook   # open main.ipynb in Jupyter
-make execute    # run the whole notebook headless and save outputs
+make test       # run the unit and system tests with pytest (-v for verbose output)
 make clean      # remove checkpoints and caches
 ```
