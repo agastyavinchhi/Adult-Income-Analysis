@@ -19,6 +19,7 @@ def data_preprocess(df):
     return df
 
 def income_share_by_education(df):
+    # Group by function to filter income >50k
     return (df["income"] == ">50K").groupby(df["education"]).mean().sort_values()
 
 
