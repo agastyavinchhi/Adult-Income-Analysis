@@ -1,3 +1,5 @@
+[![Python application](https://github.com/agastyavinchhi/Adult-Income-Analysis/actions/workflows/python-app.yml/badge.svg)](https://github.com/agastyavinchhi/Adult-Income-Analysis/actions/workflows/python-app.yml)
+
 # Adult Income
 
 Predicting whether someone earns more than $50K a year using the [Adult Census Income](https://archive.ics.uci.edu/dataset/2/adult) dataset.
