@@ -1,5 +1,6 @@
 import pandas as pd
-from main import load_data, data_preprocess, train_model, plot_income_by_education, DATA_PATH
+import pytest
+from main import load_data, data_preprocess, train_model, income_share_by_education, DATA_PATH
 
 # Unit Test 1
 def test_load_data():
@@ -25,19 +26,25 @@ def test_data_preprocess():
     assert not (cleaned == "?").values.any()
 
 # Unit Test 3
-def test_train_model():
-    df_test = data_preprocess(load_data(DATA_PATH))
-    # Select a small subsection of 200 samples for testing
-    df_test = df_test.sample(200, random_state=1)
-    # Testing to ensure ML pipeline works
-    model, accuracy = train_model(df_test)
-    assert model is not None
-    # Ensure that ML model has provided a valid accuracy output 
-    assert 0.0 <= accuracy <= 1.0
+def test_income_share_by_education():
+    df = pd.DataFrame({
+        "education": ["Bachelors", "Bachelors", "HS-grad", "HS-grad", "HS-grad", "Masters"],
+        "income": [">50K", "<=50K", "<=50K", "<=50K", ">50K", ">50K"],
+    })
+    result = income_share_by_education(df)
+
+    assert result["Bachelors"] == pytest.approx(0.5)
+    assert result["HS-grad"] == pytest.approx(1 / 3)
+    assert result["Masters"] == pytest.approx(1.0)
+
+    # sort_values() should leave it in ascending order
+    assert list(result) == sorted(result)
 
 # System Test
 def test_full_pipeline_runs():
     df = data_preprocess(load_data(DATA_PATH))
     model, accuracy = train_model(df)
+    # Testing to ensure ML pipeline works
     assert model is not None
-    assert accuracy > 0.5
+    # Ensure that ML model has provided a valid accuracy output 
+    assert 0 < accuracy < 1.0

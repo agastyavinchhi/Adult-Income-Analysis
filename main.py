@@ -18,12 +18,13 @@ def data_preprocess(df):
     df = df.drop(columns=["fnlwgt"])
     return df
 
+def income_share_by_education(df):
+    return (df["income"] == ">50K").groupby(df["education"]).mean().sort_values()
+
 
 def plot_income_by_education(df):
     # Plot: share earning >50K by education level
-    (df["income"] == ">50K").groupby(df["education"]).mean().sort_values().plot(
-        kind="barh", figsize=(8, 6)
-    )
+    income_share_by_education(df).plot(kind="barh", figsize=(8, 6))
     plt.xlabel("Share earning >50K")
     plt.title("Income by Education Level")
     plt.show()
