@@ -30,9 +30,9 @@ Six of the features are numeric — `age`, `fnlwgt`, `education.num`, `capital.g
 
 ## What I did
 
-Everything (cleaning, exploration, training, and evaluation)lives in `main.py`.
+Everything (cleaning, exploration, training, and evaluation) lives in `main.py`.
 
-Started by loading the CSV and running `head()`, `describe()`, and `info()` to understand the columns and types. Missing values are stored as `"?"` rather than as actual nulls, so Pandas doesn't flag them — I replaced them first, which showed the gaps were concentrated in `workclass` (1,836), `occupation` (1,843), and `native.country` (583). Dropping those rows along with 24 duplicates left 30,139 clean rows.
+Missing values are stored as `"?"` rather than as actual nulls, so Pandas doesn't flag them — `data_preprocess()` replaces them first, which surfaces the gaps concentrated in `workclass` (1,836), `occupation` (1,843), and `native.country` (583). Dropping those rows along with 23 duplicates and the `fnlwgt` column (a census sampling weight, not a property of the person) leaves 30,139 clean rows.
 
 Education turned out to be one of the clearest signals separating the two income groups — Prof-school and Doctorate holders earn >50K about 75% of the time, versus 42% for Bachelors and 16% for HS-grad. That's what `plot_income_by_education()` in `main.py` produces:
 
@@ -40,7 +40,7 @@ Education turned out to be one of the clearest signals separating the two income
 
 ## The model
 
-The plots made it clear the features had signal, so I used all 14 of them. The numeric columns go in as they are, and the categorical ones get one-hot encoded with `pd.get_dummies()` so each category becomes its own binary column. I converted `income` into a binary `high_income` target, split the data 80/20, and trained a `GradientBoostingClassifier` on defaults with `random_state=42`. The model achieved **86.5% accuracy** on the test set.
+The plot made it clear education carries signal, so `train_model()` uses all 14 remaining features. The numeric columns go in as they are, and the categorical ones get one-hot encoded with `pd.get_dummies()`. `income` becomes a binary target (1 if `>50K`, else 0), split 80/20, and a `GradientBoostingClassifier` trains on defaults with `random_state=42`. The model gets **86.6% accuracy** on the test set.
 
 Here's what it ended up relying on:
 
@@ -65,6 +65,14 @@ Tests live in `tests/test_main.py` and cover the core pipeline:
 - **Full pipeline (system test)** — load → preprocess → train runs end-to-end and produces a valid model and accuracy
 
 A GitHub Actions workflow (`.github/workflows/python-app.yml`) runs the full test suite with `uv run pytest` on every push and pull request to `main`.
+
+All tests passing locally:
+
+[![Local test run](images/screenshot-2.png)](images/screenshot-2.png)
+
+All tests passing in CI:
+
+[![GitHub Actions runs](images/screenshot-1.png)](images/screenshot-1.png)
 
 ## Running it
 
