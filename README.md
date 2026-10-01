@@ -84,3 +84,79 @@ make run        # run the pipeline (python main.py) and print test accuracy
 make test       # run the unit and system tests with pytest (-v for verbose output)
 make clean      # remove checkpoints and caches
 ```
+
+The image starts from `python:3.14-slim`, copies in `uv`, and installs dependencies from `uv.lock` with `--frozen`, so the container gets exactly the same versions as local development. Dependencies are copied and installed before the code, which means rebuilding after a code change reuses the cached install layer and takes seconds instead of minutes.
+
+## Final Submission Remarks
+
+Changes made for this submission:
+
+* **CI:** Confirmed the GitHub Actions workflow runs successfully and added a working status badge to the top of this README.
+* **Workflow upgrades:** Updated `.github/workflows/python-app.yml` with:
+  * a **matrix strategy** that tests on Python 3.12, 3.13 and 3.14
+  * a **scheduled run** every Monday, to catch breakage from new dependency releases
+  * a **formatting check** (`black --check`) and **linting** (`flake8`) before the tests
+  * an upgrade to `setup-uv@v6`, so each matrix job installs its own Python version
+* **Tests:** Grew the suite from 4 to 10 tests, adding edge cases: a missing file, all rows missing values, the input DataFrame not being modified, an education level with zero high earners, and the plot folder not existing yet.
+* **Docker:** Added a `Dockerfile` and `.dockerignore` so the pipeline and tests run in an identical container anywhere (details below).
+* **Refactoring:** Restructured `main.py` for readability and testability, and added `make format` and `make lint` to the Makefile (details below).
+* **Polish:** The pipeline now saves the education plot to `images/` automatically on every run and prints the model's test accuracy. Features are built in a separate, tested step that guarantees the target never leaks into the model's inputs. Missing values and top-coded outliers are documented in the data cleaning section.
+
+### Docker
+
+**How to build and run:**
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and open it. The engine must be running; check with `docker info`.
+2. Build the image from the project root:
+   ```bash
+   docker build -t adult-income .
+   ```
+3. Run the pipeline. It prints the model accuracy:
+   ```bash
+   docker run --rm adult-income
+   ```
+4. Run the test suite inside the container:
+   ```bash
+   docker run --rm adult-income pytest -v
+   ```
+5. Optional: copy the generated plot back to your machine by mounting the `images/` folder:
+   ```bash
+   docker run --rm -v "$PWD/images:/app/images" adult-income
+   ```
+6. List your images and containers:
+   ```bash
+   docker images
+   docker ps -a
+   ```
+
+**What I learned:**
+- I learnt how to use docker succesfuly and setup the relevant files for it such as `Dockerfile` and `.dockerignore`.
+- A container has no screen, so `plt.show()` does nothing there. That's part of why the refactor switched to saving the plot to a file.
+- Files written inside a container disappear when it exits unless you mount a folder, for example `docker run --rm -v "$PWD/images:/app/images" adult-income`.
+- The Docker engine has to be running (Docker Desktop open) before any `docker` command works.
+
+Build, run, and all tests passing inside the container:
+
+<img src="images/docker-build-run.png" alt="Docker build and run" width="700">
+
+### Refactoring
+
+**What I changed, and why:**
+
+| Change | Why |
+|---|---|
+| Renamed `data_preprocess` → `clean_data` (F2 in VS Code) | "Preprocess" was vague. The new name says what the function does. |
+| Extracted `build_features()` from `train_model()` | `train_model` was doing two jobs. Splitting them made feature building testable on its own, which led to the new target-leakage test. |
+| Added `is_high_income()` and the constants `TARGET` and `HIGH_INCOME` | `df["income"] == ">50K"` was duplicated in several places, so a typo in one copy would have silently broken results. |
+| Replaced `plot_income_by_education()` + `plt.show()` + the `SHOW_PLOT` flag with `save_income_by_education_plot()` | `plt.show()` does nothing in Docker or CI. Saving to a file makes the chart reproducible on every run. |
+| Replaced comments with docstrings | Each function now says what it returns. |
+| Formatted with `black`, linted with `flake8`, and added both to the Makefile and CI | This keeps the style consistent and catches errors before the tests run. |
+
+**How I verified it:**
+- All tests still pass, and I added 2 new ones for the extracted functions.
+- `make run` prints exactly the same **0.8658 accuracy** before and after the refactor, so behaviour is unchanged.
+- flake8 caught 4 calls the F2 rename missed in the test file (`F821 undefined name`) before the tests ever ran.
+
+Before and after, from the refactor commit's split diff on GitHub:
+
+<img src="images/refactor-diff.png" alt="Refactor commit diff" width="800">
