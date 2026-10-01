@@ -2,9 +2,11 @@ import pandas as pd
 import pytest
 from main import (
     load_data,
-    data_preprocess,
+    clean_data,
     train_model,
     income_share_by_education,
+    build_features,
+    save_income_by_education_plot,
     DATA_PATH,
 )
 
@@ -28,12 +30,14 @@ def test_data_preprocess():
             "income": ["<=50K", "<=50K", ">50K"],
         }
     )
-    cleaned = data_preprocess(test_input)
+    cleaned = clean_data(test_input)
 
     # Testing to ensure .drop() columns have been sucessfuly removed
     assert "fnlwgt" not in cleaned.columns
     # Testing to see that .replace() NA values has worked
     assert not (cleaned == "?").values.any()
+    # Duplicate row collapses to one, and the "?" row is dropped entirely
+    assert len(cleaned) == 1
 
 
 # Unit Test 3
@@ -63,7 +67,7 @@ def test_income_share_by_education():
 
 # System Test
 def test_full_pipeline_runs():
-    df = data_preprocess(load_data(DATA_PATH))
+    df = clean_data(load_data(DATA_PATH))
     model, accuracy = train_model(df)
     # Testing to ensure ML pipeline works
     assert model is not None
@@ -87,7 +91,7 @@ def test_data_preprocess_all_rows_missing():
             "income": ["<=50K", ">50K"],
         }
     )
-    cleaned = data_preprocess(test_input)
+    cleaned = clean_data(test_input)
     assert cleaned.empty
 
 
@@ -102,7 +106,7 @@ def test_data_preprocess_does_not_mutate_input():
         }
     )
     original = test_input.copy()
-    data_preprocess(test_input)
+    clean_data(test_input)
     pd.testing.assert_frame_equal(test_input, original)
 
 
@@ -117,3 +121,34 @@ def test_income_share_by_education_zero_share():
     result = income_share_by_education(df)
     assert result["Preschool"] == 0.0
     assert result.index[0] == "Preschool"  # lowest share sorts first
+
+
+# Unit Test: features and target are split correctly
+def test_build_features():
+    df = pd.DataFrame(
+        {
+            "age": [30, 50],
+            "sex": ["Male", "Female"],
+            "income": ["<=50K", ">50K"],
+        }
+    )
+    X, y = build_features(df)
+
+    # The target must never leak into the features
+    assert "income" not in X.columns
+    # Text categories are one-hot encoded into separate columns
+    assert {"sex_Male", "sex_Female"} <= set(X.columns)
+    assert list(y) == [0, 1]
+
+
+# Edge Case: plot is saved even when the output folder does not exist yet
+def test_save_plot_creates_folder(tmp_path):
+    df = pd.DataFrame(
+        {
+            "education": ["Bachelors", "HS-grad"],
+            "income": [">50K", "<=50K"],
+        }
+    )
+    out = tmp_path / "new_folder" / "plot.png"
+    save_income_by_education_plot(df, out)
+    assert out.exists()
