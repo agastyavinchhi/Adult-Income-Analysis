@@ -1,4 +1,10 @@
-.PHONY: install run test clean
+.PHONY: install run test format lint clean
+
+format:
+	uv run black .
+
+lint:
+	uv run flake8 .
 
 install:
 	uv sync
