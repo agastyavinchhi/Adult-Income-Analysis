@@ -48,3 +48,38 @@ def test_full_pipeline_runs():
     assert model is not None
     # Ensure that ML model has provided a valid accuracy output 
     assert 0 < accuracy < 1.0
+
+# Edge Case: missing file should fail loudly, not return an empty frame
+def test_load_data_missing_file():
+    with pytest.raises(FileNotFoundError):
+        load_data("does_not_exist.csv")
+
+# Edge Case: if every row has a missing value, nothing should survive cleaning
+def test_data_preprocess_all_rows_missing():
+    test_input = pd.DataFrame({
+        "age": [30, 45],
+        "workclass": ["?", "?"],
+        "fnlwgt": [1, 2],
+        "income": ["<=50K", ">50K"],
+    })
+    cleaned = data_preprocess(test_input)
+    assert cleaned.empty
+
+# Edge Case: preprocessing should not modify the caller's original DataFrame
+def test_data_preprocess_does_not_mutate_input():
+    test_input = pd.DataFrame({
+        "age": [25], "workclass": ["?"], "fnlwgt": [1], "income": ["<=50K"],
+    })
+    original = test_input.copy()
+    data_preprocess(test_input)
+    pd.testing.assert_frame_equal(test_input, original)
+
+# Edge Case: an education level where nobody earns >50K should give 0.0, not be dropped
+def test_income_share_by_education_zero_share():
+    df = pd.DataFrame({
+        "education": ["Preschool", "Preschool", "Doctorate"],
+        "income": ["<=50K", "<=50K", ">50K"],
+    })
+    result = income_share_by_education(df)
+    assert result["Preschool"] == 0.0
+    assert result.index[0] == "Preschool"  # lowest share sorts first
